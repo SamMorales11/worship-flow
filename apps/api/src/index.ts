@@ -156,6 +156,100 @@ app.get('/api/setlists/archive', async (c) => {
   }
 })
 
+app.get('/api/setlists/:id', async (c) => {
+  try {
+    const { id } = c.req.param();
+    const db = getDb(process.env.DATABASE_URL!);
+    const { eq } = await import('drizzle-orm');
+
+    const setlist = await db.query.setlists.findFirst({
+      where: eq(schema.setlists.id, id),
+    });
+
+    if (!setlist) {
+      return c.json({ error: 'Setlist not found' }, 404);
+    }
+
+    const items = await db
+      .select({
+        id: schema.setlistItems.id,
+        position: schema.setlistItems.position,
+        songId: schema.songs.id,
+        title: schema.songs.title,
+        artist: schema.songs.artist,
+        key: schema.songs.key,
+        bpm: schema.songs.bpm,
+      })
+      .from(schema.setlistItems)
+      .innerJoin(schema.songs, eq(schema.setlistItems.songId, schema.songs.id))
+      .where(eq(schema.setlistItems.setlistId, id))
+      .orderBy(schema.setlistItems.position);
+
+    return c.json({ ...setlist, songs: items });
+  } catch (error) {
+    console.error('Failed to fetch setlist:', error);
+    return c.json({ error: 'Failed to fetch setlist' }, 500);
+  }
+})
+
+app.put('/api/setlists/:id', async (c) => {
+  try {
+    const { id } = c.req.param();
+    const body = await c.req.json();
+    const { title, date, songs } = body;
+
+    if (!title || !songs || !Array.isArray(songs)) {
+      return c.json({ error: 'Invalid input.' }, 400);
+    }
+
+    const db = getDb(process.env.DATABASE_URL!);
+    const { eq } = await import('drizzle-orm');
+
+    await db.transaction(async (tx) => {
+      // Update setlist metadata
+      await tx.update(schema.setlists)
+        .set({ title, date: date ? new Date(date) : null, updatedAt: new Date() })
+        .where(eq(schema.setlists.id, id));
+
+      // Replace all setlist items
+      await tx.delete(schema.setlistItems).where(eq(schema.setlistItems.setlistId, id));
+
+      if (songs.length > 0) {
+        await tx.insert(schema.setlistItems).values(
+          songs.map((song: any) => ({
+            setlistId: id,
+            songId: song.songId,
+            position: song.position ? String(song.position) : null,
+          }))
+        );
+      }
+    });
+
+    return c.json({ message: 'Setlist updated successfully' });
+  } catch (error) {
+    console.error('Failed to update setlist:', error);
+    return c.json({ error: 'Failed to update setlist' }, 500);
+  }
+})
+
+app.delete('/api/setlists/:id', async (c) => {
+  try {
+    const { id } = c.req.param();
+    const db = getDb(process.env.DATABASE_URL!);
+    const { eq } = await import('drizzle-orm');
+
+    await db.transaction(async (tx) => {
+      await tx.delete(schema.setlistItems).where(eq(schema.setlistItems.setlistId, id));
+      await tx.delete(schema.setlists).where(eq(schema.setlists.id, id));
+    });
+
+    return c.json({ message: 'Setlist deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete setlist:', error);
+    return c.json({ error: 'Failed to delete setlist' }, 500);
+  }
+})
+
 serve({
   fetch: app.fetch,
   port: 3001
