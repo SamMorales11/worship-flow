@@ -1,0 +1,8 @@
+{
+  "name": "worship-flow",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

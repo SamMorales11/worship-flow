@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1777426781267,
+      "tag": "0000_gray_korvac",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1777429696683,
+      "tag": "0001_steady_charles_xavier",
+      "breakpoints": true
+    }
+  ]
+}
