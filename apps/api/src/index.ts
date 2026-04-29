@@ -30,6 +30,33 @@ app.get('/api/songs', async (c) => {
   }
 })
 
+app.post('/api/songs', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { title, artist, key, bpm, tempoType, themes } = body;
+
+    if (!title) {
+      return c.json({ error: 'Title is required' }, 400);
+    }
+
+    const db = getDb(process.env.DATABASE_URL!);
+    
+    const [newSong] = await db.insert(schema.songs).values({
+      title,
+      artist: artist || null,
+      key: key || null,
+      bpm: bpm ? String(bpm) : null,
+      tempoType: tempoType || null,
+      themes: Array.isArray(themes) ? themes : (themes ? [themes] : []),
+    }).returning();
+
+    return c.json(newSong, 201);
+  } catch (error) {
+    console.error('Failed to create song:', error);
+    return c.json({ error: 'Failed to create song' }, 500);
+  }
+})
+
 app.post('/api/setlists', async (c) => {
   try {
     const body = await c.req.json();
