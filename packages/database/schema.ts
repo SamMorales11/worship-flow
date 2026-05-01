@@ -32,6 +32,7 @@ export const songs = pgTable('songs', {
   spotifyUrl:  text('spotify_url'),       // Full Spotify track URL
   previewUrl:  text('preview_url'),       // 30-second Spotify preview MP3
   albumArt:    text('album_art'),         // High-res album cover image URL
+  language:    text('language'),          // 'ID' or 'EN'
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -549,6 +549,129 @@ app.delete('/api/setlists/:id', async (c) => {
   }
 })
 
+// ─── AI Setlist Generator: GET /api/generator ──────────────────────────────
+app.get('/api/generator', async (c) => {
+  try {
+    const theme = c.req.query('theme') || 'praise-worship';
+    const duration = parseInt(c.req.query('duration') || '30');
+    const songCount = parseInt(c.req.query('songCount') || '5');
+    const languageRatio = parseInt(c.req.query('languageRatio') || '50'); // % English
+    const energyIntensity = parseInt(c.req.query('energyIntensity') || '70');
+
+    const db = getDb(process.env.DATABASE_URL!);
+    const { sql, eq, and, or, gte, lte } = await import('drizzle-orm');
+
+    // 1. Determine BPM ranges based on Energy Intensity
+    // High energy (80-100) -> 120-150 BPM
+    // Medium energy (50-70) -> 90-120 BPM
+    // Low energy (0-40) -> 60-90 BPM
+    const minBpm = energyIntensity > 70 ? 115 : (energyIntensity > 40 ? 85 : 60);
+    const maxBpm = energyIntensity > 70 ? 160 : (energyIntensity > 40 ? 115 : 85);
+
+    // 2. Determine how many EN vs ID songs
+    const enCount = Math.round((songCount * languageRatio) / 100);
+    const idCount = songCount - enCount;
+
+    // 3. Fetch songs with randomization
+    // We fetch a pool of candidate songs
+    const fetchSongs = async (lang: string, count: number, bpmMin: number, bpmMax: number) => {
+      if (count <= 0) return [];
+      
+      // Drizzle doesn't have a direct random() order helper in findMany yet for all dialects, 
+      // but we can use sql`random()`
+      return await db.select()
+        .from(schema.songs)
+        .where(
+          and(
+            lang ? eq(schema.songs.language, lang) : undefined,
+            // Cast BPM text to integer for range comparison if possible, or just filter in memory
+            // For simplicity and safety across DBs, we'll fetch a slightly larger pool and filter/randomize
+          )
+        )
+        .orderBy(sql`random()`)
+        .limit(count * 3); // Fetch more than needed to filter in-memory
+    };
+
+    const enPool = await fetchSongs('EN', enCount, minBpm, maxBpm);
+    const idPool = await fetchSongs('ID', idCount, minBpm, maxBpm);
+
+    // 4. In-memory filtering and selection
+    const filterAndSelect = (pool: any[], targetCount: number) => {
+      return pool
+        .filter(s => {
+          const b = parseInt(s.bpm || '0');
+          if (b === 0) return true; // Include songs without BPM metadata as wildcards
+          return b >= minBpm - 10 && b <= maxBpm + 10;
+        })
+        .slice(0, targetCount);
+    };
+
+    const selectedEn = filterAndSelect(enPool, enCount);
+    const selectedId = filterAndSelect(idPool, idCount);
+
+    let allSelected = [...selectedEn, ...selectedId];
+
+    // Fallback: If we don't have enough songs, fetch more without strict language filters
+    if (allSelected.length < songCount) {
+      const remaining = songCount - allSelected.length;
+      const fallbackPool = await db.select()
+        .from(schema.songs)
+        .where(
+          and(
+            // Just ignore the language filter for the remainder
+          )
+        )
+        .orderBy(sql`random()`)
+        .limit(remaining * 5);
+      
+      const fallbackSelected = fallbackPool
+        .filter(s => !allSelected.find(as => as.id === s.id)) // Avoid duplicates
+        .slice(0, remaining);
+        
+      allSelected = [...allSelected, ...fallbackSelected];
+    }
+
+    // Shuffle final selection
+    allSelected = allSelected.sort(() => Math.random() - 0.5);
+
+    // 5. Build Timeline with transitions
+    const timeline = [];
+    for (let i = 0; i < allSelected.length; i++) {
+      const song = allSelected[i];
+      timeline.push({
+        id: (i + 1).toString(),
+        title: song.title,
+        artist: song.artist,
+        bpm: song.bpm || '?',
+        key: song.key || '?',
+        type: song.tempoType || 'Worship',
+        language: song.language,
+      });
+
+      if (i < allSelected.length - 1) {
+        const nextSong = allSelected[i + 1];
+        const bpmDiff = Math.abs(parseInt(song.bpm || '0') - parseInt(nextSong.bpm || '0'));
+        
+        let transition = "Smooth Transition";
+        if (bpmDiff > 20) transition = `Dynamic Tempo Shift (${song.bpm} → ${nextSong.bpm})`;
+        else if (song.key === nextSong.key) transition = `Seamless Key Lock (Keep ${song.key})`;
+        else transition = `Flow from ${song.key} to ${nextSong.key}`;
+
+        timeline.push({ transition });
+      }
+    }
+
+    return c.json({
+      theme,
+      duration,
+      timeline,
+    });
+  } catch (error) {
+    console.error('Failed to generate setlist:', error);
+    return c.json({ error: 'Failed to generate setlist' }, 500);
+  }
+});
+
 // ─── Duplicate a setlist ───────────────────────────────────────────────────────
 app.post('/api/setlists/:id/duplicate', async (c) => {
   try {
