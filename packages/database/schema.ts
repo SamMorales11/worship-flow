@@ -40,6 +40,8 @@ export const setlists = pgTable('setlists', {
   id: uuid('id').defaultRandom().primaryKey(),
   title: text('title').notNull(),
   date: timestamp('date'),
+  // 'draft' | 'ready' | 'completed'
+  status: text('status').notNull().default('draft'),
   organizationId: uuid('organization_id').references(() => organizations.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -371,6 +371,7 @@ app.post('/api/setlists', async (c) => {
       const [newSetlist] = await tx.insert(schema.setlists).values({
         title,
         date: date ? new Date(date) : null,
+        status: 'draft',
       }).returning({ id: schema.setlists.id });
 
       // 2. Batch insert the setlist items
@@ -439,6 +440,7 @@ app.get('/api/setlists/archive', async (c) => {
         id: schema.setlists.id,
         title: schema.setlists.title,
         date: schema.setlists.date,
+        status: schema.setlists.status,
         songsCount: sql<number>`cast(count(${schema.setlistItems.id}) as integer)`,
       })
       .from(schema.setlists)
@@ -544,6 +546,54 @@ app.delete('/api/setlists/:id', async (c) => {
   } catch (error) {
     console.error('Failed to delete setlist:', error);
     return c.json({ error: 'Failed to delete setlist' }, 500);
+  }
+})
+
+// ─── Duplicate a setlist ───────────────────────────────────────────────────────
+app.post('/api/setlists/:id/duplicate', async (c) => {
+  try {
+    const { id } = c.req.param();
+    const db = getDb(process.env.DATABASE_URL!);
+    const { eq } = await import('drizzle-orm');
+
+    // Fetch the source setlist + its items
+    const source = await db.query.setlists.findFirst({
+      where: eq(schema.setlists.id, id),
+    });
+    if (!source) return c.json({ error: 'Setlist not found' }, 404);
+
+    const sourceItems = await db
+      .select({ songId: schema.setlistItems.songId, position: schema.setlistItems.position })
+      .from(schema.setlistItems)
+      .where(eq(schema.setlistItems.setlistId, id))
+      .orderBy(schema.setlistItems.position);
+
+    // Clone in a transaction
+    const newId = await db.transaction(async (tx) => {
+      const [clone] = await tx.insert(schema.setlists).values({
+        title: `Copy of ${source.title}`,
+        date: source.date,
+        status: 'draft',
+        organizationId: source.organizationId,
+      }).returning({ id: schema.setlists.id });
+
+      if (sourceItems.length > 0) {
+        await tx.insert(schema.setlistItems).values(
+          sourceItems.map((item) => ({
+            setlistId: clone.id,
+            songId: item.songId,
+            position: item.position,
+          }))
+        );
+      }
+
+      return clone.id;
+    });
+
+    return c.json({ id: newId, message: 'Setlist duplicated successfully' }, 201);
+  } catch (error) {
+    console.error('Failed to duplicate setlist:', error);
+    return c.json({ error: 'Failed to duplicate setlist' }, 500);
   }
 })
 
