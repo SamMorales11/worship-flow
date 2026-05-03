@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Manrope } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-heading",
-  subsets: ["latin"],
-});
-
-const manrope = Manrope({
-  variable: "--font-sans",
   subsets: ["latin"],
 });
 
@@ -28,9 +23,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakartaSans.variable} ${manrope.variable} h-full antialiased`}
+      className={`${plusJakartaSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex font-sans bg-background">
+      <body className="min-h-full flex font-heading bg-background">
         <ClientLayout>{children}</ClientLayout>
         <Toaster position="bottom-right" />
       </body>
