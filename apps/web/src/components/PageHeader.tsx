@@ -28,7 +28,7 @@ export function PageHeader({
         <Button
           variant="ghost"
           asChild
-          className="p-0 h-auto hover:bg-transparent text-muted-foreground hover:text-primary transition-all duration-200 group"
+          className="-ml-4 p-0 h-auto hover:bg-transparent text-muted-foreground hover:text-primary transition-all duration-200 group"
         >
           <Link href={backHref} className="flex items-center gap-1">
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -37,13 +37,13 @@ export function PageHeader({
         </Button>
       )}
       
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col items-start gap-4">
         <div className="space-y-1">
           <h1 className="text-4xl md:text-5xl font-heading font-bold text-primary tracking-tight">
             {title}
           </h1>
           {description && (
-            <p className="text-muted-foreground text-lg font-medium max-w-2xl">
+            <p className="text-slate-600 text-lg font-medium max-w-3xl">
               {description}
             </p>
           )}

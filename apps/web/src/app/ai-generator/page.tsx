@@ -125,19 +125,14 @@ export default function AIGeneratorPage() {
     <div className="container mx-auto py-10 px-4 md:px-8 max-w-5xl min-h-screen bg-background">
       <PageHeader
         title="AI Setlist Generator"
+        description="Let our AI craft the perfect worship flow based on your parameters. We analyze tempo curves, key compatibility, and thematic resonance in real-time."
         backHref="/dashboard"
-        className="max-w-3xl mx-auto text-center"
+        className="mb-10"
       >
-        <div className="flex flex-col items-center max-w-2xl mx-auto">
-          <p className="text-muted-foreground text-lg text-center leading-relaxed mb-6">
-            Let our AI craft the perfect worship flow based on your parameters. 
-            We analyze tempo curves, key compatibility, and thematic resonance in real-time.
-          </p>
-          <Badge className="bg-[#26A69A]/10 text-[#26A69A] border-[#26A69A]/20 px-4 py-1.5 rounded-full font-semibold flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            Reactive Intelligence Active
-          </Badge>
-        </div>
+        <Badge className="bg-[#26A69A]/10 text-[#26A69A] border-[#26A69A]/20 px-4 py-1.5 rounded-full font-semibold flex items-center gap-2">
+          <Sparkles className="w-4 h-4" />
+          Reactive Intelligence Active
+        </Badge>
       </PageHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
