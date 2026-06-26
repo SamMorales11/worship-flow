@@ -20,13 +20,13 @@ Algoritma generator lagu yang responsif terhadap parameter input (Energy, Tempo,
 ### 2. 📋 Service Run Sheet (Time Management)
 Fitur manajemen waktu menit-demi-menit untuk seluruh tim pelayanan.
 - **Service Segments:** Mengatur durasi doa, pujian, hingga khotbah.
-- **Total Duration Sync:** Kalkulasi otomatis total waktu ibadah agar tetap *on-schedule*.
+- **Total Duration Sync:** Kalkulasi otomatis total waktu ibadah agar tetap *on schedule*.
 
 ### 3. 🎸 Practice Center & Chord Transposer
 Pusat latihan mandiri untuk musisi dengan fitur profesional.
 - **Musical Key Transposer:** Mengubah nada dasar lagu secara instan (C to Ab) dengan render format *monospaced* yang rapi.
 - **Smart Fetch Metadata:** Integrasi otomatis dengan **Spotify Web API** untuk *audio preview* dan **LrcLib** untuk lirik.
-- **ChordPro Support:** Penempatan chord yang presisi di atas lirik dengan skema warna "High-Contrast".
+- **ChordPro Support:** Penempatan chord yang presisi di atas lirik dengan skema warna "High Contrast".
 
 ### 4. 📊 Dashboard & Smart Analytics
 Pusat komando pelayanan dengan wawasan mendalam.
