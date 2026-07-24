@@ -61,5 +61,7 @@ Pusat komando pelayanan dengan wawasan mendalam.
 ### 1. Clone Repository
 ```bash
 git clone [https://github.com/samsiahaan/portosamy.git](https://github.com/samsiahaan/portosamy.git)
+```
+```bash
 cd worship-flow
 ```
